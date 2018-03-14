@@ -37,25 +37,32 @@ uny_cc2_cpp_sources = files([
   'align/LinearAlignment.cpp',
   'align/PairwiseAlignment.cpp',
 
+  # ------------------
+  # genomicconsensus
+  # ------------------
+  'genomicconsensus/experimental/Consensus.cpp',
+  'genomicconsensus/experimental/ConsensusModelFactory.cpp',
+  'genomicconsensus/experimental/Filters.cpp',
+  'genomicconsensus/experimental/GenomicConsensus.cpp',
+  'genomicconsensus/experimental/IPoaModel.cpp',
+  'genomicconsensus/experimental/Input.cpp',
+  'genomicconsensus/experimental/Intervals.cpp',
+  'genomicconsensus/experimental/Output.cpp',
+  'genomicconsensus/experimental/Settings.cpp',
+  'genomicconsensus/experimental/SettingsOptions.h',
+  'genomicconsensus/experimental/SettingsToolContract.h',
+  'genomicconsensus/experimental/Sorting.cpp',
+  'genomicconsensus/experimental/Workflow.cpp',
+  'genomicconsensus/experimental/arrow/ArrowModel.cpp',
+  'genomicconsensus/experimental/plurality/PluralityModel.cpp',
+  'genomicconsensus/experimental/poa/PoaModel.cpp',
+
   # --------
   # matrix
   # --------
   'matrix/BasicDenseMatrix.cpp',
   'matrix/ScaledMatrix.cpp',
   'matrix/SparseMatrix.cpp',
-
-  # --------
-  # models
-  # --------
-  'models/MarginalModelForm.cpp',
-  'models/P6C4NoCovModel.cpp',
-  'models/PwSnrAModelForm.cpp',
-  'models/PwSnrModelForm.cpp',
-  'models/S_P1C1Beta_Model.cpp',
-  'models/S_P1C1v1_Model.cpp',
-  'models/S_P1C1v2_Model.cpp',
-  'models/S_P2C2v5_Model.cpp',
-  'models/SnrModelForm.cpp',
 
   # -----
   # poa
@@ -88,6 +95,32 @@ uny_cc2_cpp_sources = files([
   'Sequence.cpp',
   'Template.cpp',
 
+  # ------
+  # gcpp
+  # ------
+  'genomicconsensus/experimental/Consensus.cpp',
+  'genomicconsensus/experimental/ConsensusModelFactory.cpp',
+  'genomicconsensus/experimental/Filters.cpp',
+  'genomicconsensus/experimental/GenomicConsensus.cpp',
+  'genomicconsensus/experimental/Input.cpp',
+  'genomicconsensus/experimental/Intervals.cpp',
+  'genomicconsensus/experimental/IPoaModel.cpp',
+  'genomicconsensus/experimental/Output.cpp',
+  'genomicconsensus/experimental/Settings.cpp',
+  'genomicconsensus/experimental/Sorting.cpp',
+  'genomicconsensus/experimental/Workflow.cpp',
+
+  'genomicconsensus/experimental/arrow/ArrowModel.cpp',
+
+  'genomicconsensus/experimental/io/FastaWriter.cpp',
+  'genomicconsensus/experimental/io/FastqWriter.cpp',
+  'genomicconsensus/experimental/io/GffWriter.cpp',
+  'genomicconsensus/experimental/io/VcfWriter.cpp',
+
+  'genomicconsensus/experimental/plurality/PluralityModel.cpp',
+
+  'genomicconsensus/experimental/poa/PoaModel.cpp',
+
   # --------------
   # cpp-optparse
   # --------------
@@ -107,79 +140,173 @@ uny_cc2_cpp_sources = files([
 
   'ConsensusSettings.cpp',
   'LocalAlignment.cpp'])
+
+# models
+uny_models = [
+  # compile-time parameterized
+  ['P6C4NoCov', files('models/P6C4NoCov_Model.cpp')],
+  ['S_P1C1Beta', files('models/S_P1C1Beta_Model.cpp')],
+  ['S_P1C1v1', files('models/S_P1C1v1_Model.cpp')],
+  ['S_P1C1v2', files('models/S_P1C1v2_Model.cpp')],
+  ['S_P2C2v5', files('models/S_P2C2v5_Model.cpp')],
+
+  # run-time parameterized
+  ['Marginal', files('models/MarginalModelForm.cpp')],
+  ['PwSnrA', files('models/PwSnrAModelForm.cpp')],
+  ['PwSnr', files('models/PwSnrModelForm.cpp')],
+  ['Snr', files('models/SnrModelForm.cpp')]]
+
+uny_enabled_models_str = ''
+foreach i : uny_models
+  uny_enabled_models_str += ' X(' + i[0] + ')'
+  uny_cc2_cpp_sources += i[1]
+endforeach
+
+uny_enabled_models = configuration_data()
+uny_enabled_models.set('ENABLED_MODELS', uny_enabled_models_str)
+
+uny_cc2_cpp_sources += configure_file(
+  input : 'ModelInternalInitializer.cpp.in',
+  output : 'ModelInternalInitializer.cpp',
+  configuration : uny_enabled_models)
+
 uny_cc2_cpp_sources += uny_version_sources
 uny_cc2_cpp_sources += uny_cssw_cpp_sources
 
-uny_cc2_lib_impl = library(
+# install library if
+# - either running as a proper project
+# - or using shared libraries
+uny_lib_install = (not meson.is_subproject()) or (get_option('default_library') == 'shared')
+
+uny_cc2_lib = library(
   'unanimity',
   uny_cc2_cpp_sources,
-  install : true,
-  soversion : 0,
+  install : uny_lib_install,
+  # use boost SONAME practice:
+  #   cause ld startup issues before
+  #   you even have the chance of running
+  #   into ABI issues.
+  soversion : meson.project_version(),
   version : meson.project_version(),
-  dependencies : [uny_pbcopper_dep, uny_pbbam_dep, uny_boost_dep, uny_thread_dep, uny_seqan_dep],
-  include_directories : [uny_include_directories, uny_cssw_header],
+  dependencies : [
+    uny_pbcopper_dep,
+    uny_pbbam_dep,
+    uny_boost_dep,
+    uny_thread_dep,
+    uny_seqan_dep],
+  include_directories : [
+    uny_include_directories,
+    uny_cssw_header],
   cpp_args : uny_warning_flags)
-
-if get_option('default_library') == 'shared'
-  uny_cc2_lib_shared = uny_cc2_lib_impl
-  uny_cc2_lib_static = []
-else
-  uny_cc2_lib_shared = []
-  uny_cc2_lib_static = uny_cc2_lib_impl
-endif
 
 ###############
 # executables #
 ###############
 
-# ccs
-if get_option('enable-build-ccs')
+if not meson.is_subproject()
+  # ccs
   uny_ccs = executable(
-  'ccs', [
-    'main/ccs.cpp'],
-  install : true,
-  dependencies : [uny_pbcopper_dep, uny_pbbam_dep, uny_boost_dep, uny_thread_dep],
-  include_directories : uny_include_directories,
-  link_with : uny_cc2_lib_shared,
-  link_whole : uny_cc2_lib_static,
-  cpp_args : uny_warning_flags)
-endif
+    'ccs', files([
+      'main/ccs.cpp']),
+    install : true,
+    dependencies : [
+      uny_pbcopper_dep,
+      uny_pbbam_dep,
+      uny_boost_dep,
+      uny_thread_dep,
+      uny_zlib_dep],
+    include_directories : uny_include_directories,
+    link_with : uny_cc2_lib,
+    cpp_args : uny_warning_flags)
 
-# ChimeraLabeler
-if get_option('enable-build-chimera')
-  executable(
-  'ChimeraLabeler', [
-    'main/ChimeraLabeler.cpp'],
-  install : true,
-  dependencies : [uny_pbcopper_dep, uny_pbbam_dep, uny_seqan_dep],
-  include_directories : uny_include_directories,
-  link_with : uny_cc2_lib_shared,
-  link_whole : uny_cc2_lib_static,
-  cpp_args : uny_warning_flags)
-endif
+  # arrow
+  uny_arrow = executable(
+    'arrow', files([
+      'main/arrow.cpp']),
+    install : true,
+    dependencies : [
+      uny_pbcopper_dep,
+      uny_pbbam_dep,
+      uny_boost_dep,
+      uny_thread_dep,
+      uny_zlib_dep],
+    include_directories : uny_include_directories,
+    link_with : uny_cc2_lib,
+    cpp_args : uny_warning_flags)
 
-# ccs_sim
-if get_option('enable-build-sim')
+  # ChimeraLabeler
   executable(
-  'ccs_sim', [
-    'main/ccs_sim.cpp'],
-  install : true,
-  dependencies : [uny_pbcopper_dep, uny_pbbam_dep],
-  include_directories : [uny_include_directories, uny_cssw_header],
-  link_with : uny_cc2_lib_shared,
-  link_whole : uny_cc2_lib_static,
-  cpp_args : uny_warning_flags)
-endif
+    'ChimeraLabeler', files([
+      'main/ChimeraLabeler.cpp']),
+    install : true,
+    dependencies : [
+      uny_pbcopper_dep,
+      uny_pbbam_dep,
+      uny_seqan_dep],
+    include_directories : uny_include_directories,
+    link_with : uny_cc2_lib,
+    cpp_args : uny_warning_flags)
 
-# genomic_sim
-if get_option('enable-build-sim')
+  # ccs_sim
   executable(
-  'genomic_sim', [
-    'main/genomic_sim.cpp'],
-  install : true,
-  dependencies : [uny_pbcopper_dep, uny_pbbam_dep],
-  include_directories : [uny_include_directories, uny_cssw_header],
-  link_with : uny_cc2_lib_shared,
-  link_whole : uny_cc2_lib_static,
-  cpp_args : uny_warning_flags)
+    'ccs_sim', files([
+      'main/ccs_sim.cpp']),
+    install : true,
+    dependencies : [
+      uny_pbcopper_dep,
+      uny_pbbam_dep,
+      uny_zlib_dep,
+      uny_boost_dep],
+    include_directories : [
+      uny_include_directories,
+      uny_cssw_header],
+    link_with : uny_cc2_lib,
+    cpp_args : uny_warning_flags)
+
+  # gcpp
+  uny_gcpp = executable(
+    'gcpp', files([
+      'main/gcpp.cpp']),
+    install : true,
+    dependencies : [
+      uny_pbcopper_dep,
+      uny_pbbam_dep,
+      uny_boost_dep,
+      uny_thread_dep,
+      uny_zlib_dep],
+    include_directories : uny_include_directories,
+    link_with : uny_cc2_lib,
+    cpp_args : uny_warning_flags)
+
+  # genomic_sim
+  executable(
+    'genomic_sim', files([
+      'main/genomic_sim.cpp']),
+    install : true,
+    dependencies : [
+      uny_pbcopper_dep,
+      uny_pbbam_dep,
+      uny_zlib_dep,
+      uny_boost_dep],
+    include_directories : [
+      uny_include_directories,
+      uny_cssw_header],
+    link_with : uny_cc2_lib,
+    cpp_args : uny_warning_flags)
+
+  # variantCaller
+  uny_variantCaller = executable(
+    'variantCaller', files([
+      'variantCaller/VariantCallerSettings.cpp',
+      'variantCaller/variantCaller.cpp']),
+    install : true,
+    dependencies : [
+      uny_pbcopper_dep,
+      uny_pbbam_dep,
+      uny_boost_dep,
+      uny_thread_dep,
+      uny_zlib_dep],
+    include_directories : uny_include_directories,
+    link_with : uny_cc2_lib,
+    cpp_args : uny_warning_flags)
 endif

@@ -14,13 +14,13 @@ GetBBRepo () {
 echo "#############################"
 echo "# LOAD MODULES"
 type module >& /dev/null || . /mnt/software/Modules/current/init/bash
-module load gcc/6.4.0
-module load ccache/3.3.4
-module load boost/1.60
-module load zlib/1.2.8
-module load htslib/1.3.1
-module load cmake/3.2.2
-module load swig/3.0.5
+module load gcc
+module load ccache
+module load boost
+module load zlib
+module load htslib
+module load cmake
+module load swig
 module load ninja
 if [[ $USER == "bamboo" ]]; then
   export CCACHE_DIR=/mnt/secondary/Share/tmp/bamboo.mobs.ccachedir
@@ -61,14 +61,14 @@ module load anaconda
 PYTHONUSERBASE=$PWD/unyve
 PATH=$PWD/unyve/bin:$PATH
 export PATH PYTHONUSERBASE
-NEXUS_WHEEL=http://nexus/repository/unsupported/pitchfork/gcc-4.9.2
+NEXUS_WHEEL=http://nexus/repository/unsupported/pitchfork/gcc-6.4.0
 PIP="pip --cache-dir=$PWD/.pip --disable-pip-version-check"
 
 echo "## Install pip modules"
 $PIP install --user \
   cram==0.7
 $PIP install --user --no-index \
-  $NEXUS_WHEEL/pythonpkgs/pysam-0.9.1.4-cp27-cp27mu-linux_x86_64.whl \
+  $NEXUS_WHEEL/pythonpkgs/pysam-0.13-cp27-cp27mu-linux_x86_64.whl \
   $NEXUS_WHEEL/pythonpkgs/xmlbuilder-1.0-cp27-none-any.whl \
   $NEXUS_WHEEL/pythonpkgs/avro-1.7.7-cp27-none-any.whl \
   $NEXUS_WHEEL/pythonpkgs/iso8601-0.1.12-py2.py3-none-any.whl \
@@ -110,7 +110,7 @@ cat > g++ <<EOF
 $(which g++) -static-libstdc++ \$@
 EOF
 chmod +x g++
-module load ccache/3.3.4
+module load ccache
 mv g++ unyve/bin/
 echo "## Install ConsensusCore"
 ( cd _deps/ConsensusCore \
@@ -131,7 +131,7 @@ echo "## Unanimity tests"
 ( cd build && ninja check )
 
 #echo "## Test CC2 via GC"
-#module load cram/0.7
+#module load cram
 #module add mummer/3.23
 #module add exonerate/2.0.0
 #( cd _rev_deps/GenomicConsensus && make check )

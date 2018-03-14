@@ -1,38 +1,3 @@
-// Copyright (c) 2017, Pacific Biosciences of California, Inc.
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted (subject to the limitations in the
-// disclaimer below) provided that the following conditions are met:
-//
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//
-//  * Redistributions in binary form must reproduce the above
-//    copyright notice, this list of conditions and the following
-//    disclaimer in the documentation and/or other materials provided
-//    with the distribution.
-//
-//  * Neither the name of Pacific Biosciences nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
-// GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY PACIFIC
-// BIOSCIENCES AND ITS CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-// OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL PACIFIC BIOSCIENCES OR ITS
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-// USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-// OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-// SUCH DAMAGE.
-
 // Author: Lance Hepler
 
 #pragma once
@@ -59,12 +24,12 @@ namespace Consensus {
 namespace {
 
 template <typename T>
-inline constexpr T clip(const T val, const T (&range)[2])
+inline UNANIMITY_CONSTEXPR T clip(const T val, const T (&range)[2])
 {
     return std::max(range[0], std::min(val, range[1]));
 }
 
-inline constexpr uint8_t EncodeBase(const char base)
+inline UNANIMITY_CONSTEXPR uint8_t EncodeBase(const char base)
 {
     // Encode just the base without its pulsewidth into the form:
     //
@@ -87,7 +52,7 @@ inline constexpr uint8_t EncodeBase(const char base)
     return em;
 }
 
-inline constexpr uint8_t EncodeBase(const char base, const uint8_t raw_pw)
+inline UNANIMITY_CONSTEXPR uint8_t EncodeBase(const char base, const uint8_t raw_pw)
 {
     // Encode the base AND its pulsewidth into the form:
     //
@@ -106,21 +71,21 @@ inline constexpr uint8_t EncodeBase(const char base, const uint8_t raw_pw)
 
 // context order for A=0, C=1, G=2, T=3:
 //   AA, CC, GG, TT, NA, NC, NG, NT
-inline constexpr uint8_t EncodeContext8(const NCBI2na prev, const NCBI2na curr)
+inline UNANIMITY_CONSTEXPR uint8_t EncodeContext8(const NCBI2na prev, const NCBI2na curr)
 {
     return ((prev.Data() != curr.Data()) << 2) | curr.Data();
 }
 
 // context order for A=0, C=1, G=2, T=3:
 //   AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT
-inline constexpr uint8_t EncodeContext16(const NCBI2na prev, const NCBI2na curr)
+inline UNANIMITY_CONSTEXPR uint8_t EncodeContext16(const NCBI2na prev, const NCBI2na curr)
 {
     return (prev.Data() << 2) | curr.Data();
 }
 
 // first: base
 // second: pw
-inline constexpr std::pair<char, uint8_t> DecodeEmission(const uint8_t em)
+inline UNANIMITY_CONSTEXPR std::pair<char, uint8_t> DecodeEmission(const uint8_t em)
 {
     if (em > 11U) throw std::runtime_error("encoded emission value is invalid!");
     const uint8_t NCBI2na = em & 3;
@@ -137,9 +102,9 @@ inline constexpr std::pair<char, uint8_t> DecodeEmission(const uint8_t em)
 // * Simple (only-single base context, match and mismatch)
 //   1. P6C4
 //   2. Snr
-inline constexpr double EmissionTableLookup(const double (&emissionTable)[3][1][2],
-                                            const MoveType move, const uint8_t emission,
-                                            const NCBI2na prev, const NCBI2na curr)
+inline UNANIMITY_CONSTEXPR double EmissionTableLookup(const double (&emissionTable)[3][1][2],
+                                                      const MoveType move, const uint8_t emission,
+                                                      const NCBI2na prev, const NCBI2na curr)
 {
     assert(move != MoveType::DELETION);
 
@@ -149,9 +114,9 @@ inline constexpr double EmissionTableLookup(const double (&emissionTable)[3][1][
 // * Di-nucleotide context, unequal neighbor context
 //   3. Marginal
 //   4. S_P1C1Beta
-inline constexpr double EmissionTableLookup(const double (&emissionTable)[3][8][4],
-                                            const MoveType move, const uint8_t emission,
-                                            const NCBI2na prev, const NCBI2na curr)
+inline UNANIMITY_CONSTEXPR double EmissionTableLookup(const double (&emissionTable)[3][8][4],
+                                                      const MoveType move, const uint8_t emission,
+                                                      const NCBI2na prev, const NCBI2na curr)
 {
     assert(move != MoveType::DELETION);
 
@@ -165,9 +130,9 @@ inline constexpr double EmissionTableLookup(const double (&emissionTable)[3][8][
 //   7. S_P1C1v1
 //   8. S_P1C1v2
 //   9. S_P2C2v5
-inline constexpr double EmissionTableLookup(const double (&emissionTable)[3][16][12],
-                                            const MoveType move, const uint8_t emission,
-                                            const NCBI2na prev, const NCBI2na curr)
+inline UNANIMITY_CONSTEXPR double EmissionTableLookup(const double (&emissionTable)[3][16][12],
+                                                      const MoveType move, const uint8_t emission,
+                                                      const NCBI2na prev, const NCBI2na curr)
 {
     assert(move != MoveType::DELETION);
 
@@ -176,7 +141,7 @@ inline constexpr double EmissionTableLookup(const double (&emissionTable)[3][16]
 }
 
 template <size_t EmissionContextNumber, size_t EmissionOutcomeNumber>
-inline constexpr double AbstractEmissionPr(
+inline UNANIMITY_CONSTEXPR double AbstractEmissionPr(
     const double (&emissionTable)[3][EmissionContextNumber][EmissionOutcomeNumber],
     const MoveType move, const uint8_t emission, const AlleleRep& prev, const AlleleRep& curr)
 {
@@ -242,10 +207,11 @@ inline constexpr double AbstractEmissionPr(
 
 // Generic cache expectation interface
 template <typename Callable>
-inline constexpr double AbstractExpectedLLForEmission(const MoveType move, const AlleleRep& prev,
-                                                      const AlleleRep& curr,
-                                                      const MomentType moment,
-                                                      Callable cacheExpectationFetcher)
+inline UNANIMITY_CONSTEXPR double AbstractExpectedLLForEmission(const MoveType move,
+                                                                const AlleleRep& prev,
+                                                                const AlleleRep& curr,
+                                                                const MomentType moment,
+                                                                Callable cacheExpectationFetcher)
 {
     // Recall that 0 in NCBI4na indicates a gap
     // which is non-sensical for an emission

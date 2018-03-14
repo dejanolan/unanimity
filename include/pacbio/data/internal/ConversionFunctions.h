@@ -1,38 +1,3 @@
-// Copyright (c) 2011-2017, Pacific Biosciences of California, Inc.
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted (subject to the limitations in the
-// disclaimer below) provided that the following conditions are met:
-//
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//
-//  * Redistributions in binary form must reproduce the above
-//    copyright notice, this list of conditions and the following
-//    disclaimer in the documentation and/or other materials provided
-//    with the distribution.
-//
-//  * Neither the name of Pacific Biosciences nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
-// GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY PACIFIC
-// BIOSCIENCES AND ITS CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-// OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL PACIFIC BIOSCIENCES OR ITS
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-// USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-// OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-// SUCH DAMAGE.
-
 // Author: David Seifert
 
 #pragma once
@@ -42,6 +7,8 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+
+#include <pacbio/UnanimityConfig.h>
 
 using namespace std::literals::string_literals;  // for std::operator ""s
 
@@ -58,7 +25,7 @@ namespace {
 // been warned.
 
 // 1. ASCII <-> NCBI2na
-inline constexpr uint8_t ASCIIToNCBI2naImpl(const char base)
+inline UNANIMITY_CONSTEXPR uint8_t ASCIIToNCBI2naImpl(const char base)
 {
     // We also allow converting lowercase ASCII (a/c/g/t)
     // into their respective NCBI2na.
@@ -89,7 +56,7 @@ inline constexpr uint8_t ASCIIToNCBI2naImpl(const char base)
     return result;
 }
 
-inline constexpr char NCBI2naToASCIIImpl(const uint8_t NCBI2naBase)
+inline UNANIMITY_CONSTEXPR char NCBI2naToASCIIImpl(const uint8_t NCBI2naBase)
 {
     // 4 and higher require 3 bits, too many bits for our representation
     assert(NCBI2naBase < 4);
@@ -100,7 +67,7 @@ inline constexpr char NCBI2naToASCIIImpl(const uint8_t NCBI2naBase)
 }
 
 // 2. ASCII <-> NCBI4na
-inline constexpr uint8_t ASCIIToNCBI4naImpl(const char base, const bool checkValid)
+inline UNANIMITY_CONSTEXPR uint8_t ASCIIToNCBI4naImpl(const char base, const bool checkValid)
 {
     constexpr const std::array<uint8_t, 256> lookupTable{
         {/*   0 -  15: */ 0, 0, 0,  0, 0,  0, 0, 0, 0,  0,  0, 0,  0, 0, 0,  0,
@@ -131,7 +98,7 @@ inline constexpr uint8_t ASCIIToNCBI4naImpl(const char base, const bool checkVal
     return result;
 }
 
-inline constexpr char NCBI4naToASCIIImpl(const uint8_t NCBI4naBase)
+inline UNANIMITY_CONSTEXPR char NCBI4naToASCIIImpl(const uint8_t NCBI4naBase)
 {
     // NCBI4na 0, i.e., gaps are non-sensical for our use-cases
     assert(NCBI4naBase != 0);
@@ -146,7 +113,7 @@ inline constexpr char NCBI4naToASCIIImpl(const uint8_t NCBI4naBase)
 }
 
 // 3. NCBI2na <-> NCBI4na
-inline constexpr uint8_t NCBI2naToNCBI4naImpl(const uint8_t NCBI2naBase)
+inline UNANIMITY_CONSTEXPR uint8_t NCBI2naToNCBI4naImpl(const uint8_t NCBI2naBase)
 {
     assert(NCBI2naBase < 4);
 
@@ -154,7 +121,7 @@ inline constexpr uint8_t NCBI2naToNCBI4naImpl(const uint8_t NCBI2naBase)
     return result;
 }
 
-inline constexpr uint8_t NCBI4naToNCBI2naImpl(const uint8_t NCBI4naBase)
+inline UNANIMITY_CONSTEXPR uint8_t NCBI4naToNCBI2naImpl(const uint8_t NCBI4naBase)
 {
     assert(NCBI4naBase < 16);
 
@@ -183,7 +150,7 @@ inline constexpr uint8_t NCBI4naToNCBI2naImpl(const uint8_t NCBI4naBase)
 //      stopgap solution and will be removed in
 //      mid-term future.
 
-inline constexpr uint8_t numSetBitsImpl(const uint8_t NCBI4naBase)
+inline UNANIMITY_CONSTEXPR uint8_t numSetBitsImpl(const uint8_t NCBI4naBase)
 {
     assert(NCBI4naBase < 16);
 
@@ -194,7 +161,7 @@ inline constexpr uint8_t numSetBitsImpl(const uint8_t NCBI4naBase)
     return lookupTable[NCBI4naBase];
 }
 
-inline constexpr char createAmbiguousBase(const char firstBase, const char secondBase)
+inline UNANIMITY_CONSTEXPR char createAmbiguousBase(const char firstBase, const char secondBase)
 {
     const uint8_t firstNCBI4na = ASCIIToNCBI4naImpl(firstBase, true);
     const uint8_t secondNCBI4na = ASCIIToNCBI4naImpl(secondBase, true);
@@ -205,7 +172,8 @@ inline constexpr char createAmbiguousBase(const char firstBase, const char secon
     return result;
 }
 
-inline constexpr bool ambiguousBaseContainsPureBase(const char& ambiguousBase, const char& pureBase)
+inline UNANIMITY_CONSTEXPR bool ambiguousBaseContainsPureBase(const char& ambiguousBase,
+                                                              const char& pureBase)
 {
     const uint8_t encAmbiguousBase = ASCIIToNCBI4naImpl(ambiguousBase, false);
     const uint8_t encPureBase = ASCIIToNCBI4naImpl(pureBase, false);

@@ -20,12 +20,36 @@ file(GLOB_RECURSE UNY_HEADER "${UNY_IncludeDir}/*.h")
 file(GLOB_RECURSE UNY_HIDDEN_HEADER "*.h")
 # get sources for src/align
 file(GLOB UNY_ALIGN_CPP  "align/*.cpp")
+# get sources for src/genomicconsensus
+file(GLOB_RECURSE UNY_GC_CPP  "genomicconsensus/*.cpp")
 # get sources for src/matrix
 file(GLOB UNY_MATRIX_CPP "matrix/*.cpp")
 # get sources for src/models
 file(GLOB UNY_MODELS_CPP "models/*.cpp")
 # get sources for src/poa
 file(GLOB UNY_POA_CPP    "poa/*.cpp")
+
+# enable models
+foreach(i
+    # compile-time parameterized
+    P6C4NoCov
+    S_P1C1Beta
+    S_P1C1v1
+    S_P1C1v2
+    S_P2C2v5
+
+    # run-time parameterized
+    Marginal
+    PwSnrA
+    PwSnr
+    Snr)
+    set(ENABLED_MODELS "${ENABLED_MODELS} X(${i})")
+endforeach()
+
+configure_file(
+    ${UNY_SourceDir}/ModelInternalInitializer.cpp.in
+    ${CMAKE_BINARY_DIR}/generated/ModelInternalInitializer.cpp
+)
 
 # includes
 set(UNY_INCLUDE_DIRS
@@ -38,6 +62,7 @@ set(UNY_INCLUDE_DIRS
     ${PacBioBAM_INCLUDE_DIRS}
     ${pbcopper_INCLUDE_DIRS}
     ${ssw_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
     CACHE INTERNAL
     "${PROJECT_NAME}: Include Directories"
     FORCE
@@ -47,6 +72,7 @@ set(UNY_INCLUDE_DIRS
 add_library(cc2 STATIC
     ${CMAKE_BINARY_DIR}/generated/UnanimityGitHash.cpp
     ${CMAKE_BINARY_DIR}/generated/UnanimityVersion.cpp
+    ${CMAKE_BINARY_DIR}/generated/ModelInternalInitializer.cpp
     ${UNY_ALIGN_CPP}
     ${UNY_MATRIX_CPP}
     ${UNY_MODELS_CPP}
@@ -79,6 +105,7 @@ set(UNANIMITY_FILES
     ${UNY_HEADER}
     ${UNY_HIDDEN_HEADER}
     ${CPPOPTPARSE_CPP}
+    ${UNY_GC_CPP}
     ChemistryMapping.cpp
     ChemistryTriple.cpp
     Interval.cpp
@@ -107,10 +134,8 @@ target_include_directories(unanimity
 )
 
 set(UNY_LIBRARIES
-    ${PRE_LINK}
-    cc2
-    ${POST_LINK}
     unanimity
+    cc2
     ${ZLIB_LDFLAGS}
     ${HTSLIB_LIBRARIES}
     ${PacBioBAM_LIBRARIES}
@@ -123,6 +148,8 @@ set(UNY_LIBRARIES
 # add executables
 if (UNY_build_bin)
     create_exe(ccs)
+    create_exe(arrow)
+    create_exe(gcpp)
 endif()
 
 if (UNY_build_chimera)
